@@ -27,5 +27,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "typescript-eslint": "^8.46.0"
+  },
+  "prisma": {
+    "schema": "./prisma/schema"
   }
 }
