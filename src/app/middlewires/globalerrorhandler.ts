@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-unused-vars */
 import { ErrorRequestHandler } from "express";
-import { TErrorSource } from "../app/config/types/types";
-import AppError from "../Errors/AppError";
+import { TErrorSource } from "../types/types";
+import AppError from "../errors/AppError";
+
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   let statusCode = 500;

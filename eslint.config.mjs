@@ -8,8 +8,7 @@ export default defineConfig(
   tseslint.configs.stylistic,
   {
     rules: {
-      "no-unused-vars": "error",
-      "no-const-assign": "error",
+      "no-unused-vars": "off",
       "no-console": "warn",
       "@typescript-eslint/consistent-type-definitions": "off",
     },

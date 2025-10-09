@@ -56,8 +56,8 @@ model Patient {
   email String @unique
   name String
   contactNumber String
-  address String
-  gender Gender
+  address String?
+  gender Gender?
   profilePhoto String?
   isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
