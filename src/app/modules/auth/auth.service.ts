@@ -4,9 +4,10 @@ import AppError from "../../errors/AppError";
 import { prisma } from "../../utils/prisma";
 import { ILogin } from "./auth.interface";
 
-import { Status } from "../user/user.constant";
+
 import { generateToken } from "../../utils/generateToken";
 import { envVariable } from "../../config/envConfig";
+import { UserStatus } from "@prisma/client";
 
 const credentialLogin = async (palyload: ILogin) => {
   const isUserExists = await prisma.user.findUniqueOrThrow({
@@ -22,13 +23,13 @@ const credentialLogin = async (palyload: ILogin) => {
     isUserExists.password
   );
 
-  if (isUserExists.status === Status.BLOCKED) {
+  if (isUserExists.status === UserStatus.BLOCKED) {
     throw new AppError(httpStatus.BAD_REQUEST, "The account is blocked");
   }
-  if (isUserExists.status === Status.INACTIVE) {
+  if (isUserExists.status === UserStatus.INACTIVE) {
     throw new AppError(httpStatus.BAD_REQUEST, "The account is inactive");
   }
-  if (isUserExists.status === Status.DELETED) {
+  if (isUserExists.status === UserStatus.DELETED) {
     throw new AppError(httpStatus.BAD_REQUEST, "The account is deleted");
   }
   if (!isCorrectPass) {
@@ -52,11 +53,9 @@ const credentialLogin = async (palyload: ILogin) => {
   );
 
   return {
-    user: isUserExists,
-    tokens: {
-      accessToken,
-      refreshToken,
-    },
+    accessToken,
+    refreshToken,
+    needPasswordChange: isUserExists.needPasswordChange,
   };
 };
 
