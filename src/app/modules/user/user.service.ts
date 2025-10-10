@@ -1,9 +1,15 @@
 import { envVariable } from "../../config/envConfig";
+import { uploadToCloudinary } from "../../utils/fileUpload/cloudinary";
 import { prisma } from "../../utils/prisma";
 import { IUser } from "./user.interface";
 import bcrypt from "bcrypt";
 
-const createPatient = async (payload: IUser) => {
+const createPatient = async (payload: IUser, file?: Express.Multer.File) => {
+  if (file) {
+    const uploadedImage = await uploadToCloudinary(file);
+    payload.profilePhoto = uploadedImage.secure_url;
+  }
+
   const hashPassword = await bcrypt.hash(
     payload.password,
     Number(envVariable.BCRIPT_SALT_ROUND)
@@ -23,6 +29,7 @@ const createPatient = async (payload: IUser) => {
         email: payload.email,
         contactNumber: payload.contactNumber,
         gender: payload.gender,
+        profilePhoto: payload.profilePhoto,
       },
     });
   });

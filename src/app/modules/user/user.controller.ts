@@ -4,7 +4,11 @@ import { UserService } from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.createPatient(req.body);
+  const payload = req.body;
+  const file = req.file;
+
+  const result = await UserService.createPatient(payload, file);
+
   sendResponse(res, {
     message: "Patient created successfully",
     data: result,
