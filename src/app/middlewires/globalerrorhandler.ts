@@ -4,7 +4,6 @@ import { ErrorRequestHandler } from "express";
 import { TErrorSource } from "../types/types";
 import AppError from "../errors/AppError";
 
-
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   let statusCode = 500;
   let message = "Something went wrong";
@@ -44,4 +43,4 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   });
 };
 
-export default globalErrorHandler
+export default globalErrorHandler;
