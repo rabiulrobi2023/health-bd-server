@@ -1,17 +1,35 @@
+import httpStatus from "http-status-codes";
 import { envVariable } from "../../config/envConfig";
+import AppError from "../../errors/AppError";
 import { uploadToCloudinary } from "../../utils/fileUpload/cloudinary";
 import { prisma } from "../../utils/prisma";
-import { IUser } from "./user.interface";
+import { IPatient } from "./patient.interface";
 import bcrypt from "bcrypt";
+import { UserRole } from "@prisma/client";
 
-const createPatient = async (payload: IUser, file?: Express.Multer.File) => {
+const createPatient = async (
+  password: string,
+  payload: IPatient,
+  file?: Express.Multer.File
+) => {
+  const isAccountExists = await prisma.user.findFirst({
+    where: {
+      email: payload.email,
+    },
+  });
+
+  if (isAccountExists) {
+    throw new AppError(httpStatus.BAD_REQUEST, "The email already used");
+  }
+
   if (file) {
     const uploadedImage = await uploadToCloudinary(file);
+
     payload.profilePhoto = uploadedImage.secure_url;
   }
 
   const hashPassword = await bcrypt.hash(
-    payload.password,
+    password,
     Number(envVariable.BCRIPT_SALT_ROUND)
   );
 
@@ -20,22 +38,19 @@ const createPatient = async (payload: IUser, file?: Express.Multer.File) => {
       data: {
         email: payload.email,
         password: hashPassword,
+        role: UserRole.PATENT,
       },
     });
 
     return await tnx.patient.create({
-      data: {
-        name: payload.name,
-        email: payload.email,
-        contactNumber: payload.contactNumber,
-        gender: payload.gender,
-        profilePhoto: payload.profilePhoto,
-      },
+      data: payload,
     });
   });
+
   return result;
 };
 
-export const UserService = {
+export const PatientService = {
   createPatient,
+
 };

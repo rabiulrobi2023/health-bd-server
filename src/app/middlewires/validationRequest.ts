@@ -1,3 +1,4 @@
+import fs from "fs/promises";
 import { NextFunction, Request, Response } from "express";
 import { ZodObject } from "zod";
 
@@ -10,6 +11,9 @@ export const validationRequest = (zodSchema: ZodObject) => {
       await zodSchema.parseAsync(req.body);
       next();
     } catch (err) {
+      if (req.file) {
+        await fs.unlink(req.file.path as string);
+      }
       next(err);
     }
   };

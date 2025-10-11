@@ -1,5 +1,3 @@
-import { envVariable } from "../../config/envConfig";
-import { nodeEnv } from "../../constant/constant";
 import catchAsync from "../../utils/catchAsync";
 import setCookie from "../../utils/cookie/setCookie";
 import { sendResponse } from "../../utils/sendResponse";

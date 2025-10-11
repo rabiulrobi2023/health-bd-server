@@ -18,7 +18,7 @@ model Admin {
   email String @unique
   name String
   contactNumber String
-  address String
+  address String?
   gender Gender
   profilePhoto String?
   isDeleted Boolean @default(false)
@@ -35,7 +35,7 @@ model Doctor {
   email String @unique
   name String
   contactNumber String
-  address String
+  address String?
   gender Gender
   profilePhoto String?
   qualification String
