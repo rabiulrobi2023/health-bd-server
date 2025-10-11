@@ -15,4 +15,4 @@ router.post(
  PatientContrller.createPatient
 );
 
-export const UserRoutes = router;
+export const PatientRoutes = router;

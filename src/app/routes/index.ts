@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { UserRoutes } from "../modules/patient/patient.routes";
 import { AuthRoutes } from "../modules/auth/auth.routes";
 import { DoctorRoutes } from "../modules/doctor/doctor.routes";
 import { AdminRoutes } from "../modules/admin/admin.routes";
+import { UserRoutes } from "../modules/user/user.routes";
+import { PatientRoutes } from "../modules/patient/patient.routes";
 
 interface IModuleRoute {
   path: string;
@@ -13,7 +14,7 @@ export const router = Router();
 const moduleRoutes: IModuleRoute[] = [
   {
     path: "/patient",
-    route: UserRoutes,
+    route: PatientRoutes,
   },
   {
     path: "/doctor",
@@ -22,6 +23,10 @@ const moduleRoutes: IModuleRoute[] = [
   {
     path: "/admin",
     route: AdminRoutes,
+  },
+  {
+    path: "/user",
+    route: UserRoutes,
   },
   {
     path: "/auth",
