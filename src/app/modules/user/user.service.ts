@@ -1,31 +1,56 @@
 import { prisma } from "../../utils/prisma";
+import { IPaginationOptions } from "../../utils/pagination/pagination.interface";
+import pagination from "../../utils/pagination/pagination";
+import { Prisma } from "@prisma/client";
+import { filterableUserFields, userSearchableFields } from "./user.constant";
+
+type TFileterableUserField = (typeof filterableUserFields)[number];
 
 const getAllUser = async (
-  page: number,
-  limit: number,
-  searchTerm: string,
-  sortBy: string,
-  orderBy: string
+  queryOptions: Record<TFileterableUserField, string>,
+  paginationOptions: IPaginationOptions
 ) => {
-  const skip = limit * (page - 1);
+  const { skip, limit, sortBy, orderBy, page } = pagination(paginationOptions);
+  const { searchTerm, ...filterData } = queryOptions;
+  const andConditions: Prisma.UserWhereInput[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: userSearchableFields.map((key) => ({
+        [key]: { contains: searchTerm, mode: "insensitive" },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({ [key]: filterData[key] })),
+    });
+  }
+
+  const where = { AND: andConditions };
 
   const result = await prisma.user.findMany({
+    where: where,
+
     skip: skip,
     take: limit,
-    where: searchTerm
-      ? {
-          email: {
-            contains: searchTerm,
-            mode: "insensitive",
-          },
-        }
-      : {},
-
     orderBy: {
       [sortBy]: orderBy,
     },
   });
-  return result;
+
+  const total = await prisma.user.count({ where: where });
+  const totalPage = Math.ceil(total / limit);
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage,
+    },
+    data: result,
+  };
 };
 
 export const UserService = {
