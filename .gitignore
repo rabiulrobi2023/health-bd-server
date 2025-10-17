@@ -5,3 +5,4 @@ build
 .vercel
 
 /src/generated/prisma
+test.js

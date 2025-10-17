@@ -6,10 +6,13 @@ import { envVariable } from "./app/config/envConfig";
 import { router } from "./app/routes";
 import globalErrorHandler from "./app/middlewires/globalerrorhandler";
 import notFoundRoute from "./app/middlewires/notFoundRoute";
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
+
 app.use("/api/v1", router);
 app.get("/", (req: Request, res: Response) => {
   res.send({

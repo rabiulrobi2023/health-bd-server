@@ -24,8 +24,16 @@ const getAllUser = async (
 
   if (Object.keys(filterData).length > 0) {
     andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({ [key]: filterData[key] })),
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: filterData[key],
+      })),
     });
+
+    // Object.values(filterData).forEach((value) => {
+    //   if (roleArr.includes(value)) {
+    //     throw new Error(`Invalid filter field: ${value}`);
+    //   }
+    // });
   }
 
   const where = { AND: andConditions };

@@ -5,7 +5,7 @@ import { prisma } from "../../utils/prisma";
 import { ILogin } from "./auth.interface";
 
 
-import { generateToken } from "../../utils/generateToken";
+import { generateToken } from "../../utils/jwt/generateToken";
 import { envVariable } from "../../config/envConfig";
 import { UserStatus } from "@prisma/client";
 
