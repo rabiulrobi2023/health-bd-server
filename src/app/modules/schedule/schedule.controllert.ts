@@ -17,8 +17,10 @@ const createSchedule = catchAsync(async (req, res) => {
 const getAllSchedules = catchAsync(async (req, res) => {
   const queryOptions = pick(req.query, filterableScheduleFields);
   const paginationOptions = pick(req.query, paginationFields);
+  const user = req.user;
 
   const result = await ScheduleService.getAllSchedules(
+    user,
     queryOptions,
     paginationOptions as IPaginationOptions
   );
@@ -28,7 +30,17 @@ const getAllSchedules = catchAsync(async (req, res) => {
   });
 });
 
+const deleteSchedule = catchAsync(async (req, res) => {
+  const id = req.params.id;
+  const result = await ScheduleService.deleteSchedule(id);
+  sendResponse(res, {
+    message: "Schedule deleted successfully",
+    data: result,
+  });
+});
+
 export const ScheduleController = {
   createSchedule,
   getAllSchedules,
+  deleteSchedule,
 };

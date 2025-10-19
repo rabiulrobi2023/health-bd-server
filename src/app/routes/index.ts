@@ -5,6 +5,7 @@ import { AdminRoutes } from "../modules/admin/admin.routes";
 import { UserRoutes } from "../modules/user/user.routes";
 import { PatientRoutes } from "../modules/patient/patient.routes";
 import { ScheduleRouter } from "../modules/schedule/schedule.routes";
+import { DoctorScheduleRouter } from "../modules/doctorSchedule/doctorSchedule.route";
 
 interface IModuleRoute {
   path: string;
@@ -36,6 +37,10 @@ const moduleRoutes: IModuleRoute[] = [
   {
     path: "/schedule",
     route: ScheduleRouter,
+  },
+  {
+    path: "/doctor-schedule",
+    route: DoctorScheduleRouter,
   },
 ];
 

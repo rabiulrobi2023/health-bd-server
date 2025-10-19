@@ -9,6 +9,7 @@ import pagination from "../../utils/pagination/pagination";
 
 import { filterableScheduleFields } from "./schedule.constant";
 import { Prisma } from "@prisma/client";
+import { IJwtPayload } from "../auth/auth.interface";
 
 type TFileterableScheduleField = (typeof filterableScheduleFields)[number];
 
@@ -85,6 +86,7 @@ const createSchedule = async (payload: ISchedule) => {
 };
 
 const getAllSchedules = async (
+  user: Partial<IJwtPayload>,
   queryOptions: Record<TFileterableScheduleField, string>,
   paginationOptions: IPaginationOptions
 ) => {
@@ -109,6 +111,25 @@ const getAllSchedules = async (
     });
   }
 
+  const doctorSchedules = await prisma.doctorSchedule.findMany({
+    where: {
+      doctor: {
+        email: user?.email || "",
+      },
+    },
+    select: {
+      scheduleId: true,
+    },
+  });
+
+  const scheduleIds = doctorSchedules.map((schedule) => schedule.scheduleId);
+  if (scheduleIds.length > 0) {
+    andConditions.push({
+      id: {
+        notIn: scheduleIds,
+      },
+    });
+  }
   const wherConditions: Prisma.ScheduleWhereInput =
     andConditions?.length > 0
       ? {
@@ -137,7 +158,100 @@ const getAllSchedules = async (
     data: result,
   };
 };
+
+const getAvailableScheduleForDoctor = async (
+  user: IJwtPayload,
+  queryOptions: Record<TFileterableScheduleField, string>,
+  paginationOptions: IPaginationOptions
+) => {
+  const { startDateTime, endDateTime } = queryOptions;
+  const { skip, limit, sortBy, orderBy, page } = pagination(paginationOptions);
+
+  const andConditions: Prisma.ScheduleWhereInput[] = [];
+  if (startDateTime && endDateTime) {
+    andConditions.push({
+      AND: [
+        {
+          startDateTime: {
+            gte: new Date(startDateTime),
+          },
+        },
+        {
+          endDateTime: {
+            lte: new Date(endDateTime),
+          },
+        },
+      ],
+    });
+  }
+
+  const doctorSchedules = await prisma.doctorSchedule.findMany({
+    where: {
+      doctor: {
+        email: user.email,
+      },
+    },
+    select: {
+      scheduleId: true,
+    },
+  });
+
+  const scheduleIds = doctorSchedules.map((schedule) => schedule.scheduleId);
+  if (scheduleIds.length > 0) {
+    andConditions.push({
+      id: {
+        notIn: scheduleIds,
+      },
+    });
+  }
+
+  const whereConditions: Prisma.ScheduleWhereInput =
+    andConditions?.length > 0
+      ? {
+          AND: andConditions,
+        }
+      : {};
+
+  const result = await prisma.schedule.findMany({
+    where: whereConditions,
+    skip: skip,
+    take: limit,
+    orderBy: {
+      [sortBy]: orderBy,
+    },
+  });
+
+  const total = await prisma.schedule.count({ where: whereConditions });
+  const totalPage = Math.ceil(total / limit);
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage,
+    },
+    data: result,
+  };
+};
+
+const deleteSchedule = async (id: string) => {
+  const isExistSchedule = await prisma.schedule.findFirst({
+    where: {
+      id: id,
+    },
+  });
+  if (!isExistSchedule) {
+    throw new AppError(httpStatus.NOT_FOUND, "Schedule not found");
+  }
+  await prisma.schedule.delete({
+    where: {
+      id: id,
+    },
+  });
+};
 export const ScheduleService = {
   createSchedule,
   getAllSchedules,
+  getAvailableScheduleForDoctor,
+  deleteSchedule,
 };

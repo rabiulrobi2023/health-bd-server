@@ -4,7 +4,6 @@ import AppError from "../../errors/AppError";
 import { prisma } from "../../utils/prisma";
 import { ILogin } from "./auth.interface";
 
-
 import { generateToken } from "../../utils/jwt/generateToken";
 import { envVariable } from "../../config/envConfig";
 import { UserStatus } from "@prisma/client";
@@ -36,6 +35,7 @@ const credentialLogin = async (palyload: ILogin) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Incorrect password");
   }
   const jwtPayload = {
+    id: isUserExists.id,
     email: isUserExists.email,
     role: isUserExists.role,
   };
