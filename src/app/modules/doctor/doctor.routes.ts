@@ -16,4 +16,7 @@ router.post(
   DoctorContrller.createDoctor
 );
 
+router.get("/", DoctorContrller.getAllDoctors);
+router.patch("/", auth(UserRole.DOCTOR), DoctorContrller.updateDoctor);
+
 export const DoctorRoutes = router;

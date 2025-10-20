@@ -46,10 +46,11 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   } else if (err instanceof Prisma.PrismaClientValidationError) {
     const findPath = error.message.match(/`(\w+)`\s+arguments/);
     const path = findPath ? findPath[1] : "";
+
     statusCode = httpStatus.BAD_REQUEST;
     message = "Validation fail";
     const sourceMessage = `${
-      path.charAt(0).toUpperCase() + path.slice(1)
+      path?path.charAt(0).toUpperCase() + path.slice(1): "Something"
     } is missing `;
     source = [
       {

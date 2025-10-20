@@ -2,12 +2,18 @@ import { envVariable } from "../../config/envConfig";
 import { uploadToCloudinary } from "../../utils/fileUpload/cloudinary";
 import { prisma } from "../../utils/prisma";
 import bcrypt from "bcrypt";
-import { UserRole } from "@prisma/client";
-import { IDoctor } from "./doctor.interface";
+import { Doctor, Prisma, UserRole } from "@prisma/client";
+import { IPaginationOptions } from "../../utils/pagination/pagination.interface";
+import pagination from "../../utils/pagination/pagination";
+import {
+  doctorFilterableFields,
+  doctorSearchableFields,
+} from "./doctor.constant";
+import { IDoctorUpdate } from "./doctor.interface";
 
 const createDoctor = async (
   password: string,
-  payload: IDoctor,
+  payload: Doctor,
   file?: Express.Multer.File
 ) => {
   // const isAccountExists = await prisma.user.findFirst({
@@ -48,6 +54,145 @@ const createDoctor = async (
   return result;
 };
 
+type TDoctorFilterableField = (typeof doctorFilterableFields)[number];
+
+const getAllDoctors = async (
+  queryOptions: Record<TDoctorFilterableField, string>,
+  paginationOptions: IPaginationOptions
+) => {
+  const { skip, limit, sortBy, orderBy, page } = pagination(paginationOptions);
+  const { searchTerm, specialties, ...filterData } = queryOptions;
+
+  const andConditions: Prisma.DoctorWhereInput[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: doctorSearchableFields.map((key) => ({
+        [key]: { contains: searchTerm, mode: "insensitive" },
+      })),
+    });
+  }
+
+  if (specialties && specialties.length > 0) {
+    andConditions.push({
+      doctorSpecialties: {
+        some: {
+          specialties: {
+            title: { contains: specialties, mode: "insensitive" },
+          },
+        },
+      },
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({ [key]: filterData[key] })),
+    });
+  }
+
+  const whereConditions: Prisma.DoctorWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.doctor.findMany({
+    where: whereConditions,
+    skip: skip,
+    take: limit,
+    orderBy: {
+      [sortBy]: orderBy,
+    },
+    include: {
+      doctorSpecialties: {
+        include: {
+          specialties: true,
+        },
+      },
+    },
+  });
+
+  const total = await prisma.doctor.count({ where: whereConditions });
+  const totalPage = Math.ceil(total / limit);
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage,
+    },
+    data: result,
+  };
+};
+
+const updateDoctor = async (
+  userId: string,
+  payload: Partial<IDoctorUpdate>
+) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: {
+      doctor: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  const doctrorId = userInfo.doctor?.id as string;
+
+  const { doctorSpecialties, ...doctorUpdateData } = payload;
+
+  return prisma.$transaction(async (tnx) => {
+    if (doctorSpecialties && doctorSpecialties.length > 0) {
+      const deleteSpecialtiesIds = doctorSpecialties?.filter(
+        (specialty) => specialty.isDeleted
+      );
+
+      if (deleteSpecialtiesIds.length > 0) {
+        for (const specialtiesId of deleteSpecialtiesIds) {
+          await tnx.doctorSpecialties.delete({
+            where: {
+              specialtiesId_doctorId: {
+                doctorId: doctrorId,
+                specialtiesId: specialtiesId.specialtiesId,
+              },
+            },
+          });
+        }
+      }
+      const insertSpecialtiesIds = doctorSpecialties.filter(
+        (specialty) => !specialty.isDeleted
+      );
+
+      if (insertSpecialtiesIds.length > 0) {
+        for (const specialties of insertSpecialtiesIds) {
+          await tnx.doctorSpecialties.create({
+            data: {
+              doctorId: doctrorId,
+              specialtiesId: specialties.specialtiesId,
+            },
+          });
+        }
+      }
+    }
+
+    const result = await tnx.doctor.update({
+      where: { id: doctrorId },
+      data: doctorUpdateData,
+      include: {
+        doctorSpecialties: {
+          include: {
+            specialties: true,
+          },
+        },
+      },
+    });
+    return result;
+  });
+};
+
 export const DoctorService = {
   createDoctor,
+  getAllDoctors,
+  updateDoctor,
 };

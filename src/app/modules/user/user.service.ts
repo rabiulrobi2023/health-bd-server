@@ -14,6 +14,8 @@ const getAllUser = async (
   const { searchTerm, ...filterData } = queryOptions;
   const andConditions: Prisma.UserWhereInput[] = [];
 
+  console.log(filterData)
+
   if (searchTerm) {
     andConditions.push({
       OR: userSearchableFields.map((key) => ({
@@ -28,18 +30,17 @@ const getAllUser = async (
         [key]: filterData[key],
       })),
     });
-
-    // Object.values(filterData).forEach((value) => {
-    //   if (roleArr.includes(value)) {
-    //     throw new Error(`Invalid filter field: ${value}`);
-    //   }
-    // });
   }
 
-  const where = { AND: andConditions };
+  const whereConditions: Prisma.UserWhereInput =
+    andConditions.length > 0
+      ? {
+          AND: andConditions,
+        }
+      : {};
 
   const result = await prisma.user.findMany({
-    where: where,
+    where: whereConditions,
 
     skip: skip,
     take: limit,
@@ -48,7 +49,7 @@ const getAllUser = async (
     },
   });
 
-  const total = await prisma.user.count({ where: where });
+  const total = await prisma.user.count({ where: whereConditions });
   const totalPage = Math.ceil(total / limit);
   return {
     meta: {
