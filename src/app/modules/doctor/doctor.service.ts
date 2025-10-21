@@ -1,3 +1,4 @@
+import httpStatus from "http-status-codes";
 import { envVariable } from "../../config/envConfig";
 import { uploadToCloudinary } from "../../utils/fileUpload/cloudinary";
 import { prisma } from "../../utils/prisma";
@@ -10,6 +11,10 @@ import {
   doctorSearchableFields,
 } from "./doctor.constant";
 import { IDoctorUpdate } from "./doctor.interface";
+import AppError from "../../errors/AppError";
+import { openai } from "../../utils/ai/openRouter";
+import { parseAiDoctorResponse } from "../../utils/ai/parseAiResponse";
+
 
 const createDoctor = async (
   password: string,
@@ -191,8 +196,54 @@ const updateDoctor = async (
   });
 };
 
+const getAiSuggestion = async (payload: { syntoms: string }) => {
+  if (!payload || !payload.syntoms) {
+    throw new AppError(httpStatus.BAD_REQUEST, "No syntoms found");
+  }
+
+  const doctors = await prisma.doctor.findMany({
+    where: { isDeleted: false },
+    include: {
+      doctorSpecialties: {
+        include: { specialties: true },
+      },
+    },
+  });
+
+  const prompt = `
+You are an AI medical assistant.
+The user reports these symptoms: "${payload.syntoms}".
+
+Available doctor list in JSON :
+${JSON.stringify(doctors, null, 2)}
+
+Your Return your response in JSON with full individual doctor data`;
+  console.log("Anylyzing.....");
+  const completion = await openai.chat.completions.create({
+    model: "z-ai/glm-4.5-air:free",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are an AI medical assistant that provide doctor suggestion",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+  const aiResponse = completion.choices[0].message;
+  const suggestedDoctor = parseAiDoctorResponse(
+    aiResponse as { content: string }
+  );
+
+  return suggestedDoctor;
+};
+
 export const DoctorService = {
   createDoctor,
   getAllDoctors,
   updateDoctor,
+  getAiSuggestion,
 };
