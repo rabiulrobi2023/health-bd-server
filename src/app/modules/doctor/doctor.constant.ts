@@ -1,2 +1,2 @@
 export const doctorSearchableFields = ["name","qualification","designation",] 
-export const doctorFilterableFields = ["searchTerm","gender","experience"," appoinmentFee","doctorSpecialties"] 
+export const doctorFilterableFields = ["searchTerm","gender","experience"," appoinmentFee","specialties"] 

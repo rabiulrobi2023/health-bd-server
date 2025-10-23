@@ -7,7 +7,7 @@ import { PatientRoutes } from "../modules/patient/patient.routes";
 import { ScheduleRouter } from "../modules/schedule/schedule.routes";
 import { DoctorScheduleRouter } from "../modules/doctorSchedule/doctorSchedule.route";
 import { SpecialtiesRouter } from "../modules/specialties/specialities.routes";
-
+import { AppointmentRouter } from "../modules/appointment/appointment.routes";
 
 interface IModuleRoute {
   path: string;
@@ -48,6 +48,10 @@ const moduleRoutes: IModuleRoute[] = [
     path: "/specialties",
     route: SpecialtiesRouter,
   },
+  {
+    path:"/appointment",
+    route: AppointmentRouter
+  }
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

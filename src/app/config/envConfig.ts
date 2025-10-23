@@ -14,6 +14,11 @@ const requiredEnvVariables = [
   "JWT_REFRESH_SECRET",
   "JWT_REFRESH_EXPIRE",
   "OPEN_ROUTER_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "FRONTEND_URL",
+  "PAYMENT_SECCESS_URL",
+  "PAYMENT_FAIL_URL",
+  "STRIPE_WEBHOOK_SECRET_KEY"
 ] as const;
 
 // const envVars = () => {

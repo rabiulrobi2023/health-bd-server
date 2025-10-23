@@ -15,7 +15,6 @@ import AppError from "../../errors/AppError";
 import { openai } from "../../utils/ai/openRouter";
 import { parseAiDoctorResponse } from "../../utils/ai/parseAiResponse";
 
-
 const createDoctor = async (
   password: string,
   payload: Doctor,
@@ -126,6 +125,22 @@ const getAllDoctors = async (
     },
     data: result,
   };
+};
+
+const getSingleDoctor = async (id: string) => {
+  const result = await prisma.doctor.findUniqueOrThrow({
+    where: {
+      id: id,
+      isDeleted: false,
+    },
+    include: {
+      doctorSchedules: {
+        include: { schedule: true },
+      },
+    },
+  });
+
+  return result;
 };
 
 const updateDoctor = async (
@@ -246,4 +261,5 @@ export const DoctorService = {
   getAllDoctors,
   updateDoctor,
   getAiSuggestion,
+  getSingleDoctor,
 };

@@ -17,6 +17,7 @@ router.post(
 );
 
 router.get("/", DoctorContrller.getAllDoctors);
+router.get("/:id", DoctorContrller.getSingleDoctor);
 router.patch("/", auth(UserRole.DOCTOR), DoctorContrller.updateDoctor);
 router.post("/suggestion", DoctorContrller.getAiSuggestion);
 export const DoctorRoutes = router;

@@ -23,6 +23,7 @@ const createDoctor = catchAsync(async (req: Request, res: Response) => {
 const getAllDoctors = catchAsync(async (req, res) => {
   const queryOptions = pick(req.query, doctorFilterableFields);
   const paginationOptions = pick(req.query, paginationFields);
+
   const result = await DoctorService.getAllDoctors(
     queryOptions,
     paginationOptions as IPaginationOptions
@@ -32,6 +33,16 @@ const getAllDoctors = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const getSingleDoctor = catchAsync(async (req, res) => {
+  const id = req.params.id;
+
+  const result = await DoctorService.getSingleDoctor(id);
+  sendResponse(res, {
+    message: "Doctor data retrieved successfully",
+    data: result,
+  });
+});
+
 const updateDoctor = catchAsync(async (req, res) => {
   const userId = req.user?.id;
   const updateData = req.body;
@@ -42,7 +53,6 @@ const updateDoctor = catchAsync(async (req, res) => {
   });
 });
 const getAiSuggestion = catchAsync(async (req, res) => {
-  
   const result = await DoctorService.getAiSuggestion(req.body);
 
   sendResponse(res, {
@@ -54,6 +64,8 @@ const getAiSuggestion = catchAsync(async (req, res) => {
 export const DoctorContrller = {
   createDoctor,
   getAllDoctors,
+  getSingleDoctor,
   updateDoctor,
-  getAiSuggestion
+  getAiSuggestion,
+
 };
