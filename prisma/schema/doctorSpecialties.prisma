@@ -1,10 +1,9 @@
 model DoctorSpecialties {
-    specialtiesId String
-    specialties Specialties @relation(fields: [specialtiesId], references: [id])
+  doctorId      String
+  specialtiesId String
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+  specialties   Specialties @relation(fields: [specialtiesId], references: [id])
 
-    doctorId String
-    doctor Doctor @relation(fields: [doctorId],references: [id])
-
-    @@id([specialtiesId,doctorId])
-    @@map("doctor-specialties")
+  @@id([specialtiesId, doctorId])
+  @@map("doctor-specialties")
 }

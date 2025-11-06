@@ -8,6 +8,8 @@ import { ScheduleRouter } from "../modules/schedule/schedule.routes";
 import { DoctorScheduleRouter } from "../modules/doctorSchedule/doctorSchedule.route";
 import { SpecialtiesRouter } from "../modules/specialties/specialities.routes";
 import { AppointmentRouter } from "../modules/appointment/appointment.routes";
+import { PrescriptionRouter } from "../modules/prescription/prescription.routes";
+import { ReviewRouter } from "../modules/review/review.routes";
 
 interface IModuleRoute {
   path: string;
@@ -51,6 +53,14 @@ const moduleRoutes: IModuleRoute[] = [
   {
     path:"/appointment",
     route: AppointmentRouter
+  },
+  {
+    path:"/prescription",
+    route: PrescriptionRouter
+  },
+  {
+    path:"/review",
+    route: ReviewRouter
   }
 ];
 

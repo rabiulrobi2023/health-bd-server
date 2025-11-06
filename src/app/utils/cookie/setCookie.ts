@@ -1,18 +1,15 @@
-import { Response } from "express";
-import { envVariable } from "../../config/envConfig";
-import { nodeEnv } from "../../constant/constant";
+import { Response } from 'express';
+import { envVariable } from '../../config/envConfig';
+import { nodeEnv } from '../../constant/constant';
 
-const setCookie = (
-  res: Response,
-  cookieName: string,
-  value: string,
-  age: number
-) => {
-  return res.cookie(cookieName, value, {
+const setCookie = async (res: Response, cookieName: string, value: string, age: number) => {
+  const result = res.cookie(cookieName, value, {
+    path: '/',
     httpOnly: true,
     secure: envVariable.NODE_ENV === nodeEnv.PRODUCTION,
-    sameSite: "none",
+    sameSite: 'lax',
     maxAge: age,
   });
+  return result;
 };
 export default setCookie;

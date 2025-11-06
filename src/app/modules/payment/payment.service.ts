@@ -31,6 +31,7 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
             session.payment_status === "paid"
               ? PaymentStatus.PAID
               : PaymentStatus.UNPAID,
+          paymentGatewatyData: session,
         },
       });
 

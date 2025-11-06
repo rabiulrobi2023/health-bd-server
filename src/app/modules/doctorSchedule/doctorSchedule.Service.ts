@@ -1,8 +1,8 @@
-import httpStatus from "http-status-codes";
-import AppError from "../../errors/AppError";
-import { prisma } from "../../utils/prisma";
+import httpStatus from 'http-status-codes';
+import AppError from '../../errors/AppError';
+import { prisma } from '../../utils/prisma';
 
-import { IJwtPayload } from "../auth/auth.interface";
+import { IJwtPayload } from '../auth/auth.interface';
 
 const createDoctorSchedule = async (
   user: Partial<IJwtPayload>,
@@ -19,10 +19,7 @@ const createDoctorSchedule = async (
       });
 
       if (!isScheduleExist) {
-        throw new AppError(
-          httpStatus.NOT_FOUND,
-          "One or more schedule not found"
-        );
+        throw new AppError(httpStatus.NOT_FOUND, 'One or more schedule not found');
       }
     })
   );
@@ -56,6 +53,12 @@ const createDoctorSchedule = async (
   return result;
 };
 
+  const getAllDoctorSchedule = async () => {
+    const result = await prisma.doctorSchedule.findMany();
+    return result;
+  };
+
 export const DoctorScheduleService = {
   createDoctorSchedule,
+  getAllDoctorSchedule
 };

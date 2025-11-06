@@ -1,25 +1,18 @@
-import httpStatus from "http-status-codes";
-import { envVariable } from "../../config/envConfig";
-import { uploadToCloudinary } from "../../utils/fileUpload/cloudinary";
-import { prisma } from "../../utils/prisma";
-import bcrypt from "bcrypt";
-import { Doctor, Prisma, UserRole } from "@prisma/client";
-import { IPaginationOptions } from "../../utils/pagination/pagination.interface";
-import pagination from "../../utils/pagination/pagination";
-import {
-  doctorFilterableFields,
-  doctorSearchableFields,
-} from "./doctor.constant";
-import { IDoctorUpdate } from "./doctor.interface";
-import AppError from "../../errors/AppError";
-import { openai } from "../../utils/ai/openRouter";
-import { parseAiDoctorResponse } from "../../utils/ai/parseAiResponse";
+import httpStatus from 'http-status-codes';
+import { envVariable } from '../../config/envConfig';
+import { uploadToCloudinary } from '../../utils/fileUpload/cloudinary';
+import { prisma } from '../../utils/prisma';
+import bcrypt from 'bcrypt';
+import { Doctor, Prisma, UserRole } from '@prisma/client';
+import { IPaginationOptions } from '../../utils/pagination/pagination.interface';
+import pagination from '../../utils/pagination/pagination';
+import { doctorFilterableFields, doctorSearchableFields } from './doctor.constant';
+import { IDoctorUpdate } from './doctor.interface';
+import AppError from '../../errors/AppError';
+import { openai } from '../../utils/ai/openRouter';
+import { parseAiDoctorResponse } from '../../utils/ai/parseAiResponse';
 
-const createDoctor = async (
-  password: string,
-  payload: Doctor,
-  file?: Express.Multer.File
-) => {
+const createDoctor = async (password: string, payload: Doctor, file?: Express.Multer.File) => {
   // const isAccountExists = await prisma.user.findFirst({
   //   where: {
   //     email: payload.email,
@@ -36,10 +29,7 @@ const createDoctor = async (
     payload.profilePhoto = uploadedImage.secure_url;
   }
 
-  const hashPassword = await bcrypt.hash(
-    password,
-    Number(envVariable.BCRIPT_SALT_ROUND)
-  );
+  const hashPassword = await bcrypt.hash(password, Number(envVariable.BCRIPT_SALT_ROUND));
 
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
@@ -72,7 +62,7 @@ const getAllDoctors = async (
   if (searchTerm) {
     andConditions.push({
       OR: doctorSearchableFields.map((key) => ({
-        [key]: { contains: searchTerm, mode: "insensitive" },
+        [key]: { contains: searchTerm, mode: 'insensitive' },
       })),
     });
   }
@@ -82,7 +72,7 @@ const getAllDoctors = async (
       doctorSpecialties: {
         some: {
           specialties: {
-            title: { contains: specialties, mode: "insensitive" },
+            title: { contains: specialties, mode: 'insensitive' },
           },
         },
       },
@@ -111,6 +101,17 @@ const getAllDoctors = async (
           specialties: true,
         },
       },
+      review: {
+        select: {
+          comment: true,
+          rating: true,
+          patient: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -137,16 +138,24 @@ const getSingleDoctor = async (id: string) => {
       doctorSchedules: {
         include: { schedule: true },
       },
+      review: {
+        select: {
+          comment: true,
+          rating: true,
+          patient: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
   return result;
 };
 
-const updateDoctor = async (
-  userId: string,
-  payload: Partial<IDoctorUpdate>
-) => {
+const updateDoctor = async (userId: string, payload: Partial<IDoctorUpdate>) => {
   const userInfo = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
     select: {
@@ -164,9 +173,7 @@ const updateDoctor = async (
 
   return prisma.$transaction(async (tnx) => {
     if (doctorSpecialties && doctorSpecialties.length > 0) {
-      const deleteSpecialtiesIds = doctorSpecialties?.filter(
-        (specialty) => specialty.isDeleted
-      );
+      const deleteSpecialtiesIds = doctorSpecialties?.filter((specialty) => specialty.isDeleted);
 
       if (deleteSpecialtiesIds.length > 0) {
         for (const specialtiesId of deleteSpecialtiesIds) {
@@ -180,9 +187,7 @@ const updateDoctor = async (
           });
         }
       }
-      const insertSpecialtiesIds = doctorSpecialties.filter(
-        (specialty) => !specialty.isDeleted
-      );
+      const insertSpecialtiesIds = doctorSpecialties.filter((specialty) => !specialty.isDeleted);
 
       if (insertSpecialtiesIds.length > 0) {
         for (const specialties of insertSpecialtiesIds) {
@@ -213,7 +218,7 @@ const updateDoctor = async (
 
 const getAiSuggestion = async (payload: { syntoms: string }) => {
   if (!payload || !payload.syntoms) {
-    throw new AppError(httpStatus.BAD_REQUEST, "No syntoms found");
+    throw new AppError(httpStatus.BAD_REQUEST, 'No syntoms found');
   }
 
   const doctors = await prisma.doctor.findMany({
@@ -233,25 +238,22 @@ Available doctor list in JSON :
 ${JSON.stringify(doctors, null, 2)}
 
 Your Return your response in JSON with full individual doctor data`;
-  console.log("Anylyzing.....");
+  console.log('Anylyzing.....');
   const completion = await openai.chat.completions.create({
-    model: "z-ai/glm-4.5-air:free",
+    model: 'z-ai/glm-4.5-air:free',
     messages: [
       {
-        role: "system",
-        content:
-          "You are an AI medical assistant that provide doctor suggestion",
+        role: 'system',
+        content: 'You are an AI medical assistant that provide doctor suggestion',
       },
       {
-        role: "user",
+        role: 'user',
         content: prompt,
       },
     ],
   });
   const aiResponse = completion.choices[0].message;
-  const suggestedDoctor = parseAiDoctorResponse(
-    aiResponse as { content: string }
-  );
+  const suggestedDoctor = parseAiDoctorResponse(aiResponse as { content: string });
 
   return suggestedDoctor;
 };

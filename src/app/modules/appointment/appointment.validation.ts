@@ -5,6 +5,11 @@ const createAppointmentValidation = z.object({
   scheduleId: z.string("Schedule id is required"),
 });
 
+const updateStatusValidation = z.object({
+  status: z.string("Status is required"),
+});
+
 export const AppointmentValidation = {
   createAppointmentValidation,
+  updateStatusValidation,
 };

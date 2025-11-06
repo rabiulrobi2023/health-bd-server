@@ -1,16 +1,16 @@
-import { Router } from "express";
-import { DoctorContrller } from "./admin.controller";
-import { validationRequest } from "../../middlewires/validationRequest";
-import { AdminValidation } from "./admin.validation";
-import { upload } from "../../utils/fileUpload/multer";
-import auth from "../../middlewires/auth";
-import { UserRole } from "@prisma/client";
+import { Router } from 'express';
+import { DoctorContrller } from './admin.controller';
+import { validationRequest } from '../../middlewires/validationRequest';
+import { AdminValidation } from './admin.validation';
+import { upload } from '../../utils/fileUpload/multer';
+import auth from '../../middlewires/auth';
+import { UserRole } from '@prisma/client';
 
 const router = Router();
 
 router.post(
-  "/create",
-  upload.single("file"),
+  '/',
+  upload.single('file'),
   auth(UserRole.ADMIN),
   validationRequest(AdminValidation.createAdminValidationSchema),
   DoctorContrller.createAdmin

@@ -9,7 +9,7 @@ import { PatientContrller } from "./patient.controller";
 const router = Router();
 
 router.post(
-  "/create",
+  "/",
   upload.single("file"),
   validationRequest(PatientValidation.createPatientValidationSchema),
  PatientContrller.createPatient

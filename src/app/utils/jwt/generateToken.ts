@@ -1,7 +1,8 @@
-import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
+import jwt, {  Secret, SignOptions } from "jsonwebtoken";
+import { IJwtPayload } from "../../modules/auth/auth.interface";
 
 export const generateToken = async (
-  payload: JwtPayload,
+  payload: IJwtPayload,
   secret: Secret,
   expireIn: string
 ) => {

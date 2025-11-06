@@ -1,21 +1,19 @@
-model Appointment{
-    id String @unique @default(uuid())
-    paitentId String
-    patient Patient @relation(fields: [paitentId],references: [id])
-    doctorId String
-    doctor Doctor @relation(fields: [doctorId], references: [id])
-    scheduleId String
-    schedule Schedule @relation(fields: [scheduleId], references: [id])
-    videoCallingId String
-    status AppointmentStauts @default(SCHEDULED)
-    paymentStatus PaymentStatus @default(UNPAID)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model Appointment {
+  id             String            @id @default(uuid())
+  paitentId      String
+  doctorId       String
+  scheduleId     String
+  videoCallingId String
+  status         AppointmentStauts @default(SCHEDULED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  paymentStatus  PaymentStatus     @default(UNPAID)
+  doctor         Doctor            @relation(fields: [doctorId], references: [id])
+  patient        Patient           @relation(fields: [paitentId], references: [id])
+  schedule       Schedule          @relation(fields: [scheduleId], references: [id])
+  payment        Payment?
+  prescriptions  Prescription?
+  review         Review?
 
-    payment Payment?
-    prescriptions Prescription?
-
-
-    @@map("appointments")
-
+  @@map("appointments")
 }

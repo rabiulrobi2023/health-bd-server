@@ -1,15 +1,15 @@
 model Prescription {
-    id String @unique @default(uuid())
-    patientId String
-    patient Patient @relation(fields: [patientId], references: [id])
-    appointmentId String @unique
-    appointment Appointment @relation(fields: [appointmentId],references: [id])
-    doctorId String
-    doctor Doctor @relation(fields: [doctorId] ,references: [id])
-    instruction String
-    followUpDate DateTime
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id            String      @id @default(uuid())
+  patientId     String
+  appointmentId String      @unique
+  doctorId      String
+  instruction   String?
+  followUpDate  DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+  patient       Patient     @relation(fields: [patientId], references: [id])
 
-    @@map("prescriptions")
+  @@map("prescriptions")
 }

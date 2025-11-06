@@ -6,7 +6,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "lint": "npx eslint ./src",
-    "build": "tsc"
+    "build": "tsc",
+    "webhook": " stripe listen --forward-to localhost:5000/api/v1/webhook",
+    "studio": "npx prisma studio"
   },
   "keywords": [],
   "author": "",
