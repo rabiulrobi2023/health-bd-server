@@ -10,11 +10,12 @@ import { UserStatus } from '@prisma/client';
 import { verifyToken } from '../../utils/jwt/verifyToken';
 
 const credentialLogin = async (palyload: ILogin) => {
-  const isUserExists = await prisma.user.findUniqueOrThrow({
+  const isUserExists = await prisma.user.findUnique({
     where: {
       email: palyload.email,
     },
   });
+
   if (!isUserExists) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
@@ -57,6 +58,9 @@ const credentialLogin = async (palyload: ILogin) => {
 };
 
 const getMe = async (accessToken: string) => {
+  if (!accessToken) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Token not found');
+  }
   const decodedData: IJwtPayload = verifyToken(accessToken, envVariable.JWT_ACCESS_SECRET);
   const user = await prisma.user.findUniqueOrThrow({
     where: {

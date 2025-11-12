@@ -12,7 +12,7 @@ import { PaymentController } from './app/modules/payment/payment.controller';
 const app: Application = express();
 app.use(
   cors({
-    origin: envVariable.FRONTEND_URL,
+    origin: "http://localhost:3000/",
     credentials: true,
   })
 );

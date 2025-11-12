@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 
 const credentialLogin = catchAsync(async (req, res) => {
   const payload = req.body;
+
   const result = await AuthService.credentialLogin(payload);
 
   setCookie(res, TokenName.ACCESS_TOKEN, result.accessToken, 1 * 60 * 60 * 1000);
@@ -19,6 +20,7 @@ const credentialLogin = catchAsync(async (req, res) => {
 
 const getMe = catchAsync(async (req, res) => {
   const accessToken = req.cookies.accessToken;
+
   const result = await AuthService.getMe(accessToken);
   sendResponse(res, {
     message: 'Get me retrieved successfully',
