@@ -23,7 +23,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   const error = err;
   if (err instanceof ZodError) {
     statusCode = httpStatus.BAD_REQUEST;
-    message = 'Zod validation error';
+    message = 'Zod validation error.........';
 
     const errorSources: TErrorSource = error?.issues.map((issue: ZodIssue) => {
       return {

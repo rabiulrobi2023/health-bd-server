@@ -59,7 +59,7 @@ const credentialLogin = async (palyload: ILogin) => {
 
 const getMe = async (accessToken: string) => {
   if (!accessToken) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Token not found');
+    throw new AppError(httpStatus.BAD_REQUEST, 'Token not found...');
   }
   const decodedData: IJwtPayload = verifyToken(accessToken, envVariable.JWT_ACCESS_SECRET);
   const user = await prisma.user.findUniqueOrThrow({

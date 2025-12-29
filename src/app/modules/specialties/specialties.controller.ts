@@ -21,6 +21,7 @@ const getAllSpecialties = catchAsync(async (req, res) => {
 const deleteSpecialties = catchAsync(async (req, res) => {
   const id = req.params.id;
 
+
   const result = await SpecialtiesService.deleteSpecialties(id);
   sendResponse(res, {
     message: "Specialties deleted successfully",

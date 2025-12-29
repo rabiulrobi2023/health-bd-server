@@ -18,7 +18,8 @@ const requiredEnvVariables = [
   "FRONTEND_URL",
   "PAYMENT_SECCESS_URL",
   "PAYMENT_FAIL_URL",
-  "STRIPE_WEBHOOK_SECRET_KEY"
+  "STRIPE_WEBHOOK_SECRET_KEY",
+  "DEFAULT_PASSWORD"
 ] as const;
 
 // const envVars = () => {

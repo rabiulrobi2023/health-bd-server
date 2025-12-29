@@ -3,46 +3,98 @@ import { envVariable } from '../../config/envConfig';
 import { uploadToCloudinary } from '../../utils/fileUpload/cloudinary';
 import { prisma } from '../../utils/prisma';
 import bcrypt from 'bcrypt';
-import { Doctor, Prisma, UserRole } from '@prisma/client';
+import { DoctorSpecialties, Prisma, UserRole } from '@prisma/client';
 import { IPaginationOptions } from '../../utils/pagination/pagination.interface';
 import pagination from '../../utils/pagination/pagination';
 import { doctorFilterableFields, doctorSearchableFields } from './doctor.constant';
-import { IDoctorUpdate } from './doctor.interface';
+
 import AppError from '../../errors/AppError';
 import { openai } from '../../utils/ai/openRouter';
 import { parseAiDoctorResponse } from '../../utils/ai/parseAiResponse';
 
-const createDoctor = async (password: string, payload: Doctor, file?: Express.Multer.File) => {
-  // const isAccountExists = await prisma.user.findFirst({
-  //   where: {
-  //     email: payload.email,
-  //   },
-  // });
+import { IDoctorCreatePayload, IDoctorUpdatePayload } from './doctor.interface';
 
-  // if (isAccountExists) {
-  //   throw new AppError(httpStatus.BAD_REQUEST, "The email already used");
-  // }
-
+const createDoctor = async (
+  { specialties, ...doctorData }: IDoctorCreatePayload,
+  file?: Express.Multer.File
+) => {
   if (file) {
     const uploadedImage = await uploadToCloudinary(file);
 
-    payload.profilePhoto = uploadedImage.secure_url;
+    doctorData.profilePhoto = uploadedImage.secure_url;
   }
 
-  const hashPassword = await bcrypt.hash(password, Number(envVariable.BCRIPT_SALT_ROUND));
+  const hashPassword = await bcrypt.hash(
+    envVariable.DEFAULT_PASSWORD,
+    Number(envVariable.BCRIPT_SALT_ROUND)
+  );
 
   const result = await prisma.$transaction(async (tnx) => {
     await tnx.user.create({
       data: {
-        email: payload.email,
+        email: doctorData.email,
         password: hashPassword,
         role: UserRole.DOCTOR,
       },
     });
 
-    return await tnx.doctor.create({
-      data: payload,
+    const createDoctor = await tnx.doctor.create({
+      data: doctorData,
     });
+
+    if (specialties && Array.isArray(specialties) && specialties.length > 0) {
+      const existingSpecialties = await tnx.specialties.findMany({
+        where: {
+          id: {
+            in: specialties,
+          },
+        },
+      });
+
+      const existingSpecialtiesIds = existingSpecialties.map((specialty) => specialty.id);
+      const invalidSpecialties = existingSpecialtiesIds.filter(
+        (specialtyId) => !specialties.includes(specialtyId)
+      );
+
+      if (invalidSpecialties.length > 0) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Invalid specialties ids: ${invalidSpecialties.join(', ')}`
+        );
+      }
+
+      // const doctorSpecialtiesData: Prisma.DoctorSpecialtiesCreateManyInput[] = specialties.map(
+      //   (specialtyId) => ({
+      //     doctorId: createDoctor.id,
+      //     specialtiesId: specialtyId,
+      //   })
+      // );
+
+      //Or
+
+      const doctorSpecialtesData = specialties.map(
+        (specialtyId: string): DoctorSpecialties => ({
+          doctorId: createDoctor.id,
+          specialtiesId: specialtyId,
+        })
+      );
+
+      await tnx.doctorSpecialties.createMany({ data: doctorSpecialtesData });
+    }
+
+    const doctorWithSpecialties = await tnx.doctor.findUnique({
+      where: {
+        id: createDoctor.id,
+      },
+      include: {
+        doctorSpecialties: {
+          include: {
+            specialties: true,
+          },
+        },
+      },
+    });
+    return doctorWithSpecialties;
   });
 
   return result;
@@ -155,66 +207,141 @@ const getSingleDoctor = async (id: string) => {
   return result;
 };
 
-const updateDoctor = async (userId: string, payload: Partial<IDoctorUpdate>) => {
-  const userInfo = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: {
-      doctor: {
-        select: {
-          id: true,
-        },
-      },
-    },
+const updateDoctor = async (
+  id: string,
+  { specialties, removeSpecialties, ...doctorData }: Partial<IDoctorUpdatePayload>
+) => {
+  const isDoctorExists = await prisma.doctor.findUniqueOrThrow({
+    where: { id: id },
   });
 
-  const doctrorId = userInfo.doctor?.id as string;
-
-  const { doctorSpecialties, ...doctorUpdateData } = payload;
-
-  return prisma.$transaction(async (tnx) => {
-    if (doctorSpecialties && doctorSpecialties.length > 0) {
-      const deleteSpecialtiesIds = doctorSpecialties?.filter((specialty) => specialty.isDeleted);
-
-      if (deleteSpecialtiesIds.length > 0) {
-        for (const specialtiesId of deleteSpecialtiesIds) {
-          await tnx.doctorSpecialties.delete({
-            where: {
-              specialtiesId_doctorId: {
-                doctorId: doctrorId,
-                specialtiesId: specialtiesId.specialtiesId,
-              },
-            },
-          });
-        }
-      }
-      const insertSpecialtiesIds = doctorSpecialties.filter((specialty) => !specialty.isDeleted);
-
-      if (insertSpecialtiesIds.length > 0) {
-        for (const specialties of insertSpecialtiesIds) {
-          await tnx.doctorSpecialties.create({
-            data: {
-              doctorId: doctrorId,
-              specialtiesId: specialties.specialtiesId,
-            },
-          });
-        }
-      }
+  const result = await prisma.$transaction(async (tnx) => {
+    if (Object.keys(doctorData).length > 0) {
+      await tnx.doctor.update({
+        where: {
+          id: id,
+        },
+        data: doctorData,
+      });
     }
 
-    const result = await tnx.doctor.update({
-      where: { id: doctrorId },
-      data: doctorUpdateData,
-      include: {
-        doctorSpecialties: {
-          include: {
-            specialties: true,
+    if (removeSpecialties && Array.isArray(removeSpecialties) && removeSpecialties.length > 0) {
+      const existingDoctorSpecialties = await tnx.doctorSpecialties.findMany({
+        where: {
+          doctorId: id,
+          specialtiesId: {
+            in: removeSpecialties,
           },
         },
-      },
+      });
+
+      if (removeSpecialties.length != existingDoctorSpecialties.length) {
+        const foundSpecialtiesIds = existingDoctorSpecialties.map(
+          (specialtiesId) => specialtiesId.specialtiesId
+        );
+        const notfoundSpecialtesIds = removeSpecialties.filter(
+          (specialteisId) => !foundSpecialtiesIds.includes(specialteisId)
+        );
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Cannot remove non-existent specialties: ${notfoundSpecialtesIds.join(', ')}`
+        );
+      }
+      await tnx.doctorSpecialties.deleteMany({
+        where: { doctorId: id, specialtiesId: { in: removeSpecialties } },
+      });
+    }
+
+    if (specialties && Array.isArray(specialties) && specialties.length > 0) {
+      const existingSpecialties = await tnx.specialties.findMany({
+        where: {
+          id: { in: specialties },
+        },
+        select: { id: true },
+      });
+
+      const existingSpecialtiesIds = existingSpecialties.map((id) => id.id);
+      const invalidSpecialtiesIds = specialties.filter(
+        (id) => !existingSpecialtiesIds.includes(id)
+      );
+
+      if (invalidSpecialtiesIds.length > 0) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Invalid specialties ids: ${invalidSpecialtiesIds}`
+        );
+      }
+
+      const currentDoctorSpecialties = await tnx.doctorSpecialties.findMany({
+        where: { doctorId: doctorData.id, specialtiesId: { in: specialties } },
+        select: { specialtiesId: true },
+      });
+      const currentSpecialtiesIds = currentDoctorSpecialties.map((id) => id.specialtiesId);
+      const newSpecialtiesIds = specialties.filter((id) => !currentSpecialtiesIds.includes(id));
+      if (newSpecialtiesIds.length > 0) {
+        const doctorSpecialtiesData = newSpecialtiesIds.map(
+          (id): DoctorSpecialties => ({ doctorId: isDoctorExists.id, specialtiesId: id })
+        );
+
+        await tnx.doctorSpecialties.createMany({ data: doctorSpecialtiesData });
+      }
+    }
+    return await tnx.doctor.findUnique({
+      where: { id: isDoctorExists.id },
+      include: { doctorSpecialties: { include: { specialties: true } } },
     });
-    return result;
   });
+  return result;
 };
+
+// const updateDoctor = async (doctorId: string, payload: Partial<IDoctorPayload>) => {
+//   const { doctorSpecialties, ...doctorUpdateData } = payload;
+
+//   return prisma.$transaction(async (tnx) => {
+//     if (doctorSpecialties && doctorSpecialties.length > 0) {
+//       const deleteSpecialtiesIds = doctorSpecialties?.filter((specialty) => specialty.isDeleted);
+
+//       if (deleteSpecialtiesIds.length > 0) {
+//         for (const specialtiesId of deleteSpecialtiesIds) {
+//           await tnx.doctorSpecialties.delete({
+//             where: {
+//               specialtiesId_doctorId: {
+//                 doctorId: doctorId,
+//                 specialtiesId: specialtiesId.specialtiesId,
+//               },
+//             },
+//           });
+//         }
+//       }
+//       const insertSpecialtiesIds = doctorSpecialties.filter((specialty) => !specialty.isDeleted);
+
+//       if (insertSpecialtiesIds.length > 0) {
+//         for (const specialties of insertSpecialtiesIds) {
+//           await tnx.doctorSpecialties.create({
+//             data: {
+//               doctorId: doctorId,
+//               specialtiesId: specialties.specialtiesId,
+//             },
+//           });
+//         }
+//       }
+//     }
+
+//     const result = await tnx.doctor.update({
+//       where: { id: doctorId },
+//       data: doctorUpdateData,
+//       include: {
+//         doctorSpecialties: {
+//           include: {
+//             specialties: true,
+//           },
+//         },
+//       },
+//     });
+
+//     return result;
+//   });
+// };
 
 const getAiSuggestion = async (payload: { syntoms: string }) => {
   if (!payload || !payload.syntoms) {
@@ -238,7 +365,7 @@ Available doctor list in JSON :
 ${JSON.stringify(doctors, null, 2)}
 
 Your Return your response in JSON with full individual doctor data`;
-  console.log('Anylyzing.....');
+
   const completion = await openai.chat.completions.create({
     model: 'z-ai/glm-4.5-air:free',
     messages: [
@@ -258,10 +385,36 @@ Your Return your response in JSON with full individual doctor data`;
   return suggestedDoctor;
 };
 
+const deleteDoctor = async (id: string) => {
+  const doctorInfo = await prisma.doctor.findFirstOrThrow({
+    where: { id: id },
+    include: {
+      user: true,
+    },
+  });
+  const userId = doctorInfo.user.id;
+  await prisma.$transaction(async (tnx) => {
+    await tnx.doctor.delete({ where: { id: id } });
+
+    const result = await tnx.user.delete({ where: { id: userId } });
+    return result;
+  });
+};
+
+const softDeleteDoctor = async (id: string) => {
+  const result = await prisma.doctor.update({
+    where: { id, isDeleted: false },
+    data: { isDeleted: true },
+  });
+  return result;
+};
+
 export const DoctorService = {
   createDoctor,
   getAllDoctors,
   updateDoctor,
   getAiSuggestion,
   getSingleDoctor,
+  softDeleteDoctor,
+  deleteDoctor,
 };

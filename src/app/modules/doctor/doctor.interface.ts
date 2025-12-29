@@ -1,4 +1,4 @@
-import { Doctor, Gender } from "@prisma/client";
+import { Doctor, Gender } from '@prisma/client';
 
 export interface IDoctor {
   email: string;
@@ -15,11 +15,9 @@ export interface IDoctor {
   appoinmentFee: number;
 }
 
-export interface IDoctorUpdate extends Doctor {
-  doctorSpecialties: {
-    specialtiesId: string;
-    isDeleted?: boolean;
-  }[];
+export interface IDoctorCreatePayload extends Doctor {
+  specialties: string[];
 }
-
-
+export interface IDoctorUpdatePayload extends IDoctorCreatePayload {
+  removeSpecialties: string[];
+}

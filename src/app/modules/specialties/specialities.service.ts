@@ -6,6 +6,7 @@ const createSpecialties = async (
   payload: ISpecialties,
   file?: Express.Multer.File
 ) => {
+
   if (file) {
     const uploadedImage = await uploadToCloudinary(file);
     payload.icon = uploadedImage.secure_url;

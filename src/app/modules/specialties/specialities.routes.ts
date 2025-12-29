@@ -15,6 +15,6 @@ router.post(
   SpecialtiesController.createSpecialties
 );
 router.get("/", SpecialtiesController.getAllSpecialties);
-router.delete("/:id", SpecialtiesController.deleteSpecialties);
+router.delete("/:id",auth(UserRole.ADMIN), SpecialtiesController.deleteSpecialties);
 
 export const SpecialtiesRouter = router;
